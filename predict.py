@@ -68,6 +68,7 @@ def get_inputs_and_trues(files):
             keras_class = int(classes_in_keras_format[image_class])
             y_true.append(keras_class)
         except Exception:
+            #print(os.path.split(i))
             y_true.append(os.path.split(i)[1])
 
         inputs.append(x)
@@ -130,6 +131,9 @@ def predict(path):
             print('| should be {} ({}) -> predicted as {} ({})'.format(
                 y_trues[i], files[i].split(os.sep)[-2], p, recognized_class))
 
+
+        #print(y_trues)
+        #print(predictions)
         if args.accuracy:
             print('Accuracy {}'.format(
                 accuracy_score(y_true=y_trues, y_pred=predictions)))

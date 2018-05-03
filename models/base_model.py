@@ -15,12 +15,12 @@ class BaseModel(object):
     def __init__(self,
                  class_weight=None,
                  nb_epoch=10,
-                 freeze_layers_number=None):
+                 freeze_layers_number=13):
         self.model = None
         self.class_weight = class_weight
         self.nb_epoch = nb_epoch
         self.fine_tuning_patience = 20
-        self.batch_size = 16
+        self.batch_size = 512
         self.freeze_layers_number = freeze_layers_number
         self.img_size = (100, 100)
 

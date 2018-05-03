@@ -8,7 +8,7 @@ from .base_model import BaseModel
 
 class VGG16(BaseModel):
     noveltyDetectionLayerName = 'fc2'
-    noveltyDetectionLayerSize = 2048
+    noveltyDetectionLayerSize = 1024
 
     def __init__(self, *args, **kwargs):
         super(VGG16, self).__init__(*args, **kwargs)

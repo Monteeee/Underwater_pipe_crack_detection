@@ -22,7 +22,7 @@ class BaseModel(object):
         self.fine_tuning_patience = 20
         self.batch_size = 16
         self.freeze_layers_number = freeze_layers_number
-        self.img_size = (64, 64)
+        self.img_size = (100, 100)
 
     def _create(self):
         raise NotImplementedError('subclasses must override _create()')
@@ -35,16 +35,24 @@ class BaseModel(object):
             optimizer=Adam(lr=1e-5),
             metrics=['accuracy'])
 
-        train_data = self.get_train_datagen(rotation_range=30., shear_range=0.2, zoom_range=0.2, horizontal_flip=True)
-        callbacks = self.get_callbacks(config.get_fine_tuned_weights_path(), patience=self.fine_tuning_patience)
+        train_data = self.get_train_datagen(
+            rotation_range=30.,
+            shear_range=0.2,
+            zoom_range=0.2,
+            horizontal_flip=True)
+        callbacks = self.get_callbacks(
+            config.get_fine_tuned_weights_path(),
+            patience=self.fine_tuning_patience)
 
         if util.is_keras2():
             self.model.fit_generator(
                 train_data,
-                steps_per_epoch=config.nb_train_samples / float(self.batch_size),
+                steps_per_epoch=config.nb_train_samples / float(
+                    self.batch_size),
                 epochs=self.nb_epoch,
                 validation_data=self.get_validation_datagen(),
-                validation_steps=config.nb_validation_samples / float(self.batch_size),
+                validation_steps=config.nb_validation_samples / float(
+                    self.batch_size),
                 callbacks=callbacks,
                 class_weight=self.class_weight)
         else:
@@ -81,9 +89,9 @@ class BaseModel(object):
 
     def get_input_tensor(self):
         if util.get_keras_backend_name() == 'theano':
-            return Input(shape=(3,) + self.img_size)
+            return Input(shape=(3, ) + self.img_size)
         else:
-            return Input(shape=self.img_size + (3,))
+            return Input(shape=self.img_size + (3, ))
 
     @staticmethod
     def make_net_layers_non_trainable(model):
@@ -100,14 +108,20 @@ class BaseModel(object):
 
     @staticmethod
     def get_callbacks(weights_path, patience=30, monitor='val_loss'):
-        early_stopping = EarlyStopping(verbose=1, patience=patience, monitor=monitor)
-        model_checkpoint = ModelCheckpoint(weights_path, save_best_only=True, save_weights_only=True, monitor=monitor)
+        early_stopping = EarlyStopping(
+            verbose=1, patience=patience, monitor=monitor)
+        model_checkpoint = ModelCheckpoint(
+            weights_path,
+            save_best_only=True,
+            save_weights_only=True,
+            monitor=monitor)
         return [early_stopping, model_checkpoint]
 
     @staticmethod
     def apply_mean(image_data_generator):
         """Subtracts the dataset mean"""
-        image_data_generator.mean = np.array([103.939, 116.779, 123.68], dtype=np.float32).reshape((3, 1, 1))
+        image_data_generator.mean = np.array(
+            [103.939, 116.779, 123.68], dtype=np.float32).reshape((3, 1, 1))
 
     @staticmethod
     def load_classes():
@@ -122,9 +136,15 @@ class BaseModel(object):
     def get_train_datagen(self, *args, **kwargs):
         idg = ImageDataGenerator(*args, **kwargs)
         self.apply_mean(idg)
-        return idg.flow_from_directory(config.train_dir, target_size=self.img_size, classes=config.classes)
+        return idg.flow_from_directory(
+            config.train_dir,
+            target_size=self.img_size,
+            classes=config.classes)
 
     def get_validation_datagen(self, *args, **kwargs):
         idg = ImageDataGenerator(*args, **kwargs)
         self.apply_mean(idg)
-        return idg.flow_from_directory(config.validation_dir, target_size=self.img_size, classes=config.classes)
+        return idg.flow_from_directory(
+            config.validation_dir,
+            target_size=self.img_size,
+            classes=config.classes)

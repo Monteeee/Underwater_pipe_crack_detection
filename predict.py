@@ -15,24 +15,36 @@ def parse_args():
     Parse input arguments
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path', dest='path', help='Path to image', default=None, type=str)
-    parser.add_argument('--accuracy', action='store_true', help='To print accuracy score')
+    parser.add_argument(
+        '--path', dest='path', help='Path to image', default=None, type=str)
+    parser.add_argument(
+        '--accuracy', action='store_true', help='To print accuracy score')
     parser.add_argument('--plot_confusion_matrix', action='store_true')
     parser.add_argument('--execution_time', action='store_true')
     parser.add_argument('--store_activations', action='store_true')
     parser.add_argument('--novelty_detection', action='store_true')
-    parser.add_argument('--model', type=str, required=True, help='Base model architecture',
-                        choices=[config.MODEL_RESNET50, config.MODEL_RESNET152, config.MODEL_INCEPTION_V3,
-                                 config.MODEL_VGG16])
+    parser.add_argument(
+        '--model',
+        type=str,
+        required=True,
+        help='Base model architecture',
+        choices=[
+            config.MODEL_RESNET50, config.MODEL_RESNET152,
+            config.MODEL_INCEPTION_V3, config.MODEL_VGG16
+        ])
     parser.add_argument('--data_dir', help='Path to data train directory')
-    parser.add_argument('--batch_size', default=500, type=int, help='How many files to predict on at once')
+    parser.add_argument(
+        '--batch_size',
+        default=500,
+        type=int,
+        help='How many files to predict on at once')
     args = parser.parse_args()
     return args
 
 
 def get_files(path):
     if os.path.isdir(path):
-        files = glob.glob(path + '*.jpg')
+        files = glob.glob(path + '*.png')
     elif path.find('*') > 0:
         files = glob.glob(path)
     else:
@@ -69,11 +81,13 @@ def predict(path):
     print('Found {} files'.format(n_files))
 
     if args.novelty_detection:
-        activation_function = util.get_activation_function(model, model_module.noveltyDetectionLayerName)
-        novelty_detection_clf = joblib.load(config.get_novelty_detection_model_path())
+        activation_function = util.get_activation_function(
+            model, model_module.noveltyDetectionLayerName)
+        novelty_detection_clf = joblib.load(
+            config.get_novelty_detection_model_path())
 
     y_trues = []
-    predictions = np.zeros(shape=(n_files,))
+    predictions = np.zeros(shape=(n_files, ))
     nb_batch = int(np.ceil(n_files / float(args.batch_size)))
     for n in range(0, nb_batch):
         print('Batch {}'.format(n))
@@ -84,10 +98,12 @@ def predict(path):
         y_trues += y_true
 
         if args.store_activations:
-            util.save_activations(model, inputs, files[n_from:n_to], model_module.noveltyDetectionLayerName, n)
+            util.save_activations(model, inputs, files[n_from:n_to],
+                                  model_module.noveltyDetectionLayerName, n)
 
         if args.novelty_detection:
-            activations = util.get_activations(activation_function, [inputs[0]])
+            activations = util.get_activations(activation_function,
+                                               [inputs[0]])
             nd_preds = novelty_detection_clf.predict(activations)[0]
             print(novelty_detection_clf.__classes[nd_preds])
 
@@ -109,17 +125,21 @@ def predict(path):
 
     if not args.store_activations:
         for i, p in enumerate(predictions):
-            recognized_class = list(classes_in_keras_format.keys())[list(classes_in_keras_format.values()).index(p)]
-            print('| should be {} ({}) -> predicted as {} ({})'.format(y_trues[i], files[i].split(os.sep)[-2], p,
-                                                                       recognized_class))
+            recognized_class = list(classes_in_keras_format.keys())[list(
+                classes_in_keras_format.values()).index(p)]
+            print('| should be {} ({}) -> predicted as {} ({})'.format(
+                y_trues[i], files[i].split(os.sep)[-2], p, recognized_class))
 
         if args.accuracy:
-            print('Accuracy {}'.format(accuracy_score(y_true=y_trues, y_pred=predictions)))
+            print('Accuracy {}'.format(
+                accuracy_score(y_true=y_trues, y_pred=predictions)))
 
         if args.plot_confusion_matrix:
             cnf_matrix = confusion_matrix(y_trues, predictions)
-            util.plot_confusion_matrix(cnf_matrix, config.classes, normalize=False)
-            util.plot_confusion_matrix(cnf_matrix, config.classes, normalize=True)
+            util.plot_confusion_matrix(
+                cnf_matrix, config.classes, normalize=False)
+            util.plot_confusion_matrix(
+                cnf_matrix, config.classes, normalize=True)
 
 
 if __name__ == '__main__':

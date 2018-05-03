@@ -124,11 +124,14 @@ def predict(path):
             print('Prediction on batch {} took: {}'.format(n, end - start))
 
     if not args.store_activations:
+        a = 0
         for i, p in enumerate(predictions):
-            recognized_class = list(classes_in_keras_format.keys())[list(
-                classes_in_keras_format.values()).index(p)]
-            print('| should be {} ({}) -> predicted as {} ({})'.format(
-                y_trues[i], files[i].split(os.sep)[-2], p, recognized_class))
+            recognized_class = list(classes_in_keras_format.keys())[list(classes_in_keras_format.values()).index(p)]
+            print('| should be {} ({}) -> predicted as {} ({})'.format(y_trues[i], files[i].split(os.sep)[-2], p,
+                                                                       recognized_class))
+            a = a + int(recognized_class)
+        b = a / len(predictions)
+        print(b)
 
         if args.accuracy:
             print('Accuracy {}'.format(

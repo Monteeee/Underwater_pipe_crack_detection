@@ -1,0 +1,5 @@
+trained/
+data/
+models/
+.idea/
+__pycache__/

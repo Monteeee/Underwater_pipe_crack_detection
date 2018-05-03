@@ -3,7 +3,8 @@ import numpy as np
 from os import listdir
 from os.path import splitext
 import sys
-
+import scipy
+from scipy import ndimage
 
 def find_images(file_or_dir):
 	#print("name is " + file_or_dir)
@@ -24,7 +25,23 @@ def find_images(file_or_dir):
 		
 
 def image_process(img):
-	return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+	gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+	
+	if False:
+		gray = cv2.equalizeHist(gray)
+	
+	gray = np.float32(gray)
+	
+	#kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]], np.float32)
+	#gray = cv2.filter2D(gray, -1, kernel)
+	
+	blurred = ndimage.gaussian_filter(gray, 3)
+	alpha = 5.0
+	dif = gray - blurred
+	print(gray[20, 20], blurred[20, 20], dif[20, 20])
+	gray = gray + alpha * dif
+	
+	return gray
 
 
 if __name__ == "__main__":

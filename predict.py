@@ -44,7 +44,7 @@ def parse_args():
 
 def get_files(path):
     if os.path.isdir(path):
-        files = glob.glob(path + '*.png')
+        files = glob.glob(path + '*.jpg')
     elif path.find('*') > 0:
         files = glob.glob(path)
     else:

@@ -15,7 +15,7 @@ class BaseModel(object):
     def __init__(self,
                  class_weight=None,
                  nb_epoch=10,
-                 freeze_layers_number=None):
+                 freeze_layers_number=13):
         self.model = None
         self.class_weight = class_weight
         self.nb_epoch = nb_epoch

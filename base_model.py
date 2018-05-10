@@ -10,6 +10,7 @@ from sklearn.externals import joblib
 
 import config
 import util
+import time
 
 
 class BaseModel(object):
@@ -21,7 +22,7 @@ class BaseModel(object):
         self.class_weight = class_weight
         self.nb_epoch = nb_epoch
         self.fine_tuning_patience = 30
-        self.batch_size = 32
+        self.batch_size = 128
         self.freeze_layers_number = freeze_layers_number
         self.img_size = (80, 80)
 
@@ -51,7 +52,7 @@ class BaseModel(object):
             patience=self.fine_tuning_patience)
 
         if util.is_keras2():
-            self.model.fit_generator(
+            hist=self.model.fit_generator(
                 train_data,
                 steps_per_epoch=config.nb_train_samples / float(
                     self.batch_size),
@@ -64,7 +65,7 @@ class BaseModel(object):
                 callbacks=callbacks,
                 class_weight=self.class_weight)
         else:
-            self.model.fit_generator(
+            hist=self.model.fit_generator(
                 train_data,
                 samples_per_epoch=config.nb_train_samples,
                 nb_epoch=self.nb_epoch,
@@ -72,7 +73,8 @@ class BaseModel(object):
                 nb_val_samples=config.nb_validation_samples,
                 callbacks=callbacks,
                 class_weight=self.class_weight)
-
+        print(hist.history)
+        util.save_history(history=hist, prefix=time.time())
         self.model.save(config.get_model_path())
 
     def train(self):

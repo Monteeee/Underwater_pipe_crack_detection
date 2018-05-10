@@ -17,7 +17,7 @@ labels = [folder for folder in sorted(os.listdir(DATASET_TRAIN))]
 for label in labels:
     path_label = os.path.join(DATASET_TRAIN, label)
     n_img = []
-    n_img += [i for i in os.listdir(path_label) if i.endswith('.png')]
+    n_img += [i for i in os.listdir(path_label)]
     n_files = len(n_img)
 
     # ratio of split

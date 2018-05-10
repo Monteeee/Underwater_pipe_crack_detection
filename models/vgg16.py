@@ -22,16 +22,17 @@ class VGG16(BaseModel):
 
         x = base_model.output
         x = Flatten()(x)
-        x = Dense(2048, activation='elu', name='fc1')(x)
-        x = Dropout(0.5)(x)
+        x = Dense(1024, activation='elu', name='fc1')(x)
+        x = Dropout(0.4)(x)
         x = Dense(
             self.noveltyDetectionLayerSize,
             activation='elu',
             name=self.noveltyDetectionLayerName)(x)
-        x = Dropout(0.5)(x)
+        x = Dropout(0.4)(x)
+        #predictions = Dense(
+            #len(config.classes), activation='softmax', name='predictions')(x)
         predictions = Dense(
-            len(config.classes), activation='softmax', name='predictions')(x)
-
+            2, activation='softmax', name='predictions')(x)
         self.model = Model(input=base_model.input, output=predictions)
 
 

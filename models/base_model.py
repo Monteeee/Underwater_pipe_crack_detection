@@ -3,7 +3,8 @@ from keras.preprocessing import image
 from keras.applications.imagenet_utils import preprocess_input
 from keras.preprocessing.image import ImageDataGenerator
 from keras.layers import Input
-from keras.optimizers import Adam
+from keras.optimizers import Adam, SGD
+from keras.backend import get_session
 import numpy as np
 from sklearn.externals import joblib
 
@@ -14,15 +15,15 @@ import util
 class BaseModel(object):
     def __init__(self,
                  class_weight=None,
-                 nb_epoch=10,
-                 freeze_layers_number=13):
+                 nb_epoch=30,
+                 freeze_layers_number=19):
         self.model = None
         self.class_weight = class_weight
         self.nb_epoch = nb_epoch
-        self.fine_tuning_patience = 20
-        self.batch_size = 512
+        self.fine_tuning_patience = 30
+        self.batch_size = 32
         self.freeze_layers_number = freeze_layers_number
-        self.img_size = (100, 100)
+        self.img_size = (80, 80)
 
     def _create(self):
         raise NotImplementedError('subclasses must override _create()')
@@ -32,14 +33,19 @@ class BaseModel(object):
 
         self.model.compile(
             loss='categorical_crossentropy',
-            optimizer=Adam(lr=1e-5),
+            optimizer=Adam(lr=5e-6),
+            #optimizer=SGD(lr=5e-6, momentum=0.9),
             metrics=['accuracy'])
 
         train_data = self.get_train_datagen(
-            rotation_range=30.,
-            shear_range=0.2,
-            zoom_range=0.2,
-            horizontal_flip=True)
+            rescale=1./255,
+            rotation_range=60.,
+            #shear_range=0.2,
+            #zoom_range=0.2,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
+            horizontal_flip=True,
+            vertical_flip=True)
         callbacks = self.get_callbacks(
             config.get_fine_tuned_weights_path(),
             patience=self.fine_tuning_patience)
@@ -50,7 +56,9 @@ class BaseModel(object):
                 steps_per_epoch=config.nb_train_samples / float(
                     self.batch_size),
                 epochs=self.nb_epoch,
-                validation_data=self.get_validation_datagen(),
+                validation_data=self.get_validation_datagen(
+                    rescale=1./255),
+                #validation_data=self.get_validation_datagen(),
                 validation_steps=config.nb_validation_samples / float(
                     self.batch_size),
                 callbacks=callbacks,
@@ -70,7 +78,16 @@ class BaseModel(object):
     def train(self):
         print("Creating model...")
         self._create()
+        #self.load()
         print("Model is created")
+        #print(self.model.layers)
+        #session = get_session()
+        #for layer in [self.model.layers[-5], self.model.layers[-3], self.model.layers[-1]]:
+        #for layer in [self.model.layers[-3], self.model.layers[-1]]:
+            #print("======== reset weights ========")
+            #print(layer)
+            #layer.kernel.initializer.run(session=session)
+            
         print("Fine tuning...")
         self._fine_tuning()
         self.save_classes()
@@ -102,6 +119,7 @@ class BaseModel(object):
         if self.freeze_layers_number:
             print("Freezing {} layers".format(self.freeze_layers_number))
             for layer in self.model.layers[:self.freeze_layers_number]:
+                print(layer)
                 layer.trainable = False
             for layer in self.model.layers[self.freeze_layers_number:]:
                 layer.trainable = True
@@ -120,6 +138,7 @@ class BaseModel(object):
     @staticmethod
     def apply_mean(image_data_generator):
         """Subtracts the dataset mean"""
+        print("applying mean!")
         image_data_generator.mean = np.array(
             [103.939, 116.779, 123.68], dtype=np.float32).reshape((3, 1, 1))
 
@@ -136,9 +155,13 @@ class BaseModel(object):
     def get_train_datagen(self, *args, **kwargs):
         idg = ImageDataGenerator(*args, **kwargs)
         self.apply_mean(idg)
+        print("========== directory =========")
+        print(type(config.train_dir))
+        print(config.train_dir)
         return idg.flow_from_directory(
             config.train_dir,
             target_size=self.img_size,
+            #class_mode='binary',
             classes=config.classes)
 
     def get_validation_datagen(self, *args, **kwargs):
@@ -147,4 +170,5 @@ class BaseModel(object):
         return idg.flow_from_directory(
             config.validation_dir,
             target_size=self.img_size,
+            #class_mode='binary',
             classes=config.classes)

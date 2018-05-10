@@ -44,7 +44,7 @@ def parse_args():
 
 def get_files(path):
     if os.path.isdir(path):
-        files = glob.glob(path + '*.jpg')
+        files = glob.glob(path + '*.png')
     elif path.find('*') > 0:
         files = glob.glob(path)
     else:
@@ -60,9 +60,15 @@ def get_files(path):
 def get_inputs_and_trues(files):
     inputs = []
     y_true = []
-
+    vgg_mean = np.array([103.939, 116.779, 123.68], dtype=np.float32)
     for i in files:
         x = model_module.load_img(i)
+        #print("=== before ===")
+        #print(x[50, 50, :])
+        #x = np.subtract(x, vgg_mean)
+        x = x * 1./255
+        #print("=== after ===")
+        #print(x[50, 50, :])
         try:
             image_class = i.split(os.sep)[-2]
             keras_class = int(classes_in_keras_format[image_class])
@@ -70,7 +76,6 @@ def get_inputs_and_trues(files):
         except Exception:
             #print(os.path.split(i))
             y_true.append(os.path.split(i)[1])
-
         inputs.append(x)
 
     return y_true, inputs

@@ -36,9 +36,9 @@ def image_process(img):
 	#gray = cv2.filter2D(gray, -1, kernel)
 	
 	blurred = ndimage.gaussian_filter(gray, 3)
-	alpha = 5.0
+	alpha = 3.0
 	dif = gray - blurred
-	print(gray[20, 20], blurred[20, 20], dif[20, 20])
+	#print(gray[20, 20], blurred[20, 20], dif[20, 20])
 	gray = gray + alpha * dif
 	
 	return gray

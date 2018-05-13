@@ -33,10 +33,10 @@ class BaseModel(object):
         self.freeze_top_layers()
 
         self.model.compile(
-            loss='binary_crossentropy',
-            optimizer=Adam(lr=1e-5),
+            loss='categorical_crossentropy',
+            optimizer=Adam(lr=5e-6),
             #optimizer=SGD(lr=5e-6, momentum=0.9),
-            metrics=['binary_accuracy'])
+            metrics=['accuracy'])
 
         train_data = self.get_train_datagen(
             rescale=1./255,

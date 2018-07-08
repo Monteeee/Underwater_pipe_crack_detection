@@ -17,6 +17,7 @@ from keras import backend as K
 import config
 import math
 import itertools
+from datetime import datetime
 
 
 def save_history(history, prefix):
@@ -77,7 +78,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
 
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, cm[i, j],
+        plt.text(j, i, round(cm[i, j], 2),
                  horizontalalignment="center",
                  color="#BFD1D4" if cm[i, j] > thresh else "black")
 
@@ -85,10 +86,13 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
 
+    today = datetime.now()
     if normalize:
-        plt.savefig(os.path.join(confusion_matrix_dir, 'normalized.jpg'))
+        file_name = 'normalized-' + today.strftime("%H-%M-%d-%B") +'.jpg'
+        plt.savefig(os.path.join(confusion_matrix_dir, file_name))
     else:
-        plt.savefig(os.path.join(confusion_matrix_dir, 'without_normalization.jpg'))
+        file_name = 'without_normalization-' + today.strftime("%H-%M-%d-%B") +'.jpg'
+        plt.savefig(os.path.join(confusion_matrix_dir, file_name))
 
 
 def get_dir_imgs_number(dir_path):

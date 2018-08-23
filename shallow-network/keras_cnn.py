@@ -4,20 +4,16 @@ from keras.layers import Conv2D, MaxPooling2D
 from keras.layers import Activation, Dropout, Flatten, Dense
 from keras import backend as K
 import numpy as np
-#import focal_loss as f
 
-#np.random.seed(1337)  # for reproducibility
+np.random.seed(1337)  # for reproducibility
 
 img_width, img_height = 80, 80
 
-train_data_dir = 'data/train'
-validation_data_dir = 'data/valid'
-test0_data_dir = 'data/test0'
-test1_data_dir = 'data/test1'
+train_data_dir = 'image2/train'
+validation_data_dir = 'image2/valid'
 
-nb_train_samples = 3474
-nb_validation_samples = 931
-epochs = 50
+steps_per_epoch = 10
+epochs = 100
 batch_size = 32
 
 if K.image_data_format() == 'channels_first':
@@ -42,11 +38,11 @@ model.add(Flatten())
 model.add(Dense(256))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
-model.add(Dense(1))
+model.add(Dense(4))
 model.add(Activation('sigmoid'))
 
 model.compile(
-    loss='binary_crossentropy', optimizer='adam', metrics=['binary_accuracy'])
+    loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 train_datagen = ImageDataGenerator(
     rescale=1. / 255,
@@ -55,25 +51,21 @@ train_datagen = ImageDataGenerator(
     horizontal_flip=True,
     vertical_flip=True)
 
-test_datagen = ImageDataGenerator(rescale=1. / 255)
+valid_datagen = ImageDataGenerator(rescale=1. / 255)
 
 train_generator = train_datagen.flow_from_directory(
     train_data_dir,
     target_size=(img_width, img_height),
-    batch_size=batch_size,
-    class_mode='binary')
+    batch_size=batch_size)
 
-validation_generator = test_datagen.flow_from_directory(
+validation_generator = valid_datagen.flow_from_directory(
     validation_data_dir,
     target_size=(img_width, img_height),
-    batch_size=batch_size,
-    class_mode='binary')
+    batch_size=batch_size)
 
 model.fit_generator(
     train_generator,
-    steps_per_epoch=nb_train_samples // batch_size,
     epochs=epochs,
-    validation_data=validation_generator,
-    validation_steps=nb_validation_samples // batch_size)
+    validation_data=validation_generator)
 
 model.save('my.h5')

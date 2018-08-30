@@ -5,7 +5,7 @@ import numpy as np
 
 img_width, img_height = 80, 80
 
-test_data_dir = 'image2/test'
+test_data_dir = 'image/test'
 
 batch_size = 64
 test_datagen = ImageDataGenerator(rescale=1. / 255)

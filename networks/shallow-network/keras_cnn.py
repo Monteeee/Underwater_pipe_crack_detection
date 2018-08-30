@@ -9,12 +9,12 @@ np.random.seed(1337)  # for reproducibility
 
 img_width, img_height = 80, 80
 
-train_data_dir = 'image2/train'
-validation_data_dir = 'image2/valid'
+train_data_dir = 'image/train'
+validation_data_dir = 'image/valid'
 
-steps_per_epoch = 10
+steps_per_epoch = 30
 epochs = 100
-batch_size = 32
+batch_size = 48
 
 if K.image_data_format() == 'channels_first':
     input_shape = (3, img_width, img_height)
@@ -37,7 +37,7 @@ model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Flatten())
 model.add(Dense(256))
 model.add(Activation('relu'))
-model.add(Dropout(0.5))
+# model.add(Dropout(0.5))
 model.add(Dense(4))
 model.add(Activation('sigmoid'))
 
@@ -47,7 +47,6 @@ model.compile(
 train_datagen = ImageDataGenerator(
     rescale=1. / 255,
     shear_range=0.2,
-    zoom_range=0.2,
     horizontal_flip=True,
     vertical_flip=True)
 

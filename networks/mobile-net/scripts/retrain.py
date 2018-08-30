@@ -139,15 +139,18 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     A dictionary containing an entry for each label subfolder, with images split
     into training, testing, and validation sets within each label.
   """
+
   if not gfile.Exists(image_dir):
     tf.logging.error("Image directory '" + image_dir + "' not found.")
     return None
   result = collections.OrderedDict()
+
   sub_dirs = [
     os.path.join(image_dir,item)
     for item in gfile.ListDirectory(image_dir)]
   sub_dirs = sorted(item for item in sub_dirs
                     if gfile.IsDirectory(item))
+  sub_index = 0
   for sub_dir in sub_dirs:
     extensions = ['jpg', 'jpeg', 'JPG', 'JPEG', 'png']
     file_list = []
@@ -172,21 +175,11 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     training_images = []
     testing_images = []
     validation_images = []
+
+
     for file_name in file_list:
       base_name = os.path.basename(file_name)
-      # We want to ignore anything after '_nohash_' in the file name when
-      # deciding which set to put an image in, the data set creator has a way of
-      # grouping photos that are close variations of each other. For example
-      # this is used in the plant disease data set to group multiple pictures of
-      # the same leaf.
       hash_name = re.sub(r'_nohash_.*$', '', file_name)
-      # This looks a bit magical, but we need to decide whether this file should
-      # go into the training, testing, or validation sets, and we want to keep
-      # existing files in the same set even if more files are subsequently
-      # added.
-      # To do that, we need a stable way of deciding based on just the file name
-      # itself, so we do a hash of that and then use that to generate a
-      # probability value that we use to assign it.
       hash_name_hashed = hashlib.sha1(compat.as_bytes(hash_name)).hexdigest()
       percentage_hash = ((int(hash_name_hashed, 16) %
                           (MAX_NUM_IMAGES_PER_CLASS + 1)) *
@@ -197,19 +190,57 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
         testing_images.append(base_name)
       else:
         training_images.append(base_name)
-    # print(testing_images)
-    # time.sleep(1000)
 
     ####
+    image_dir2 = 'tf_files/test_photos'
+    if not gfile.Exists(image_dir2):
+      tf.logging.error("Image directory '" + image_dir2 + "' not found.")
+      return None
+
+    sub_dirs2 = [
+      os.path.join(image_dir2, item)
+      for item in gfile.ListDirectory(image_dir2)]
+    sub_dirs2 = sorted(item for item in sub_dirs2
+                      if gfile.IsDirectory(item))
+
+    sub_dir2 = sub_dirs2[sub_index]
+
+    extensions = ['jpg', 'jpeg', 'JPG', 'JPEG', 'png']
+    file_list = []
+    dir_name = os.path.basename(sub_dir2)
+    if dir_name == image_dir2:
+      continue
+    tf.logging.info("Looking for images in '" + dir_name + "'")
+    for extension in extensions:
+      file_glob = os.path.join(image_dir2, dir_name, '*.' + extension)
+      file_list.extend(gfile.Glob(file_glob))
+    if not file_list:
+      tf.logging.warning('No files found')
+      continue
+    if len(file_list) < 20:
+      tf.logging.warning(
+        'WARNING: Folder has less than 20 images, which may cause issues.')
+    elif len(file_list) > MAX_NUM_IMAGES_PER_CLASS:
+      tf.logging.warning(
+        'WARNING: Folder {} has more than {} images. Some images will '
+        'never be selected.'.format(dir_name, MAX_NUM_IMAGES_PER_CLASS))
+    label_name = re.sub(r'[^a-z0-9]+', ' ', dir_name.lower())
+    testing_images = []
+
+    for file_name in file_list:
+      base_name = os.path.basename(file_name)
+      testing_images.append(base_name)
 
 
-    ####
+
+    ###
     result[label_name] = {
         'dir': dir_name,
         'training': training_images,
         'testing': testing_images,
         'validation': validation_images,
     }
+    sub_index += 1
   return result
 
 
@@ -371,7 +402,14 @@ def create_bottleneck_file(bottleneck_path, image_lists, label_name, index,
                               image_dir, category)
   if not gfile.Exists(image_path):
     tf.logging.fatal('File does not exist %s', image_path)
-  image_data = gfile.FastGFile(image_path, 'rb').read()
+
+  try:
+    image_data = gfile.FastGFile(image_path, 'rb').read()
+  except Exception as e:
+    image_dir = 'tf_files/test_photos'
+    image_path = get_image_path(image_lists, label_name, index,
+                                image_dir, category)
+    image_data = gfile.FastGFile(image_path, 'rb').read()
 
   try:
     bottleneck_values = run_bottleneck_on_image(

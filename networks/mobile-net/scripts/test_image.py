@@ -106,9 +106,9 @@ if __name__ == "__main__":
           pred_index = top_k[0]
           y_pred.append(pred_index)
           print(infile)
-          # template = "{} (score={:0.5f})"
-          # for i in top_k:
-          #     print(template.format(labels[i], results[i]))
+          template = "{} (score={:0.5f})"
+          for i in top_k:
+              print(template.format(labels[i], results[i]))
 
 
   C = confusion_matrix(y_true, y_pred)

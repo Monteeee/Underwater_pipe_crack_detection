@@ -1,5 +1,7 @@
 # Underwater_pipe_crack_detection
 
+This is a repository for a course project as well as student research work at KTH.
+
 #### Directory Content: 
 **Demo**, a simple demo, { raw images -> preprocessing (segmenting, cropping) -> large scale classifier for classes 
 -> small scale classifier for detecting structures -> show results }
@@ -11,3 +13,8 @@ and a shallow convolutional network for comparison.
   to use the original dataset please send email for our modified one.
 
 **Preprocessing**, a script for augmenting images, a script for simply turning images into grayscale and 3 channels, a script for splitting the data randomly.
+
+Our VGG16 reference code is from:\
+(https://github.com/Arsey/keras-transfer-learning-for-oxford102)<br />
+The MobileNet reference code is from:\
+(https://www.tensorflow.org/hub/tutorials/image_retraining)

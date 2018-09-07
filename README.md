@@ -1,6 +1,7 @@
 # Underwater_pipe_crack_detection
 
-This is a repository for a course project as well as student research work at KTH.
+This is a repository for a course project as well as student research work at KTH. \
+(The template of our report is just a course requirement, not any indication of oriented conference XD)
 
 #### Directory Content: 
 **Demo**, a simple demo, { raw images -> preprocessing (segmenting, cropping) -> large scale classifier for classes 

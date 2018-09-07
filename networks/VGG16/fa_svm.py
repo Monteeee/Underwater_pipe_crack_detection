@@ -38,123 +38,110 @@ def get_feature_and_label(model, generator, batch_number):
     return vect_feature, label
 
 
+def read_or_prepare_training_data(read_in_batch_size=100, save_file_name='svm_data10.pkl'):
+    # ================================================================================================================ #
+    # This is the function to read in or prepare training data.                                                        #
+    # Since we need to use VGG16 as feature extractor, a simple way is to use VGG16 to read data and produce vector of #
+    # final layer features. so here I read them batch by batch (otherwise my GPU memory will explode) and put them     #
+    # through VGG, then finally stack them and save them to local pkl file.                                            #
+    # this requires that you have our dataset saved under the same directory organization as ours.                     #
+    # ================================================================================================================ #
+    if os.path.isfile(save_file_name):
+        pkl_file = open(save_file_name, 'rb')
+        feature_train_stack, label_train_stack = pickle.load(pkl_file)
+    else:
+        batch_size = read_in_batch_size
+
+        # defining keras data generator for training and validation
+        train_datagen = ImageDataGenerator(
+            #rescale=1. / 255,
+            #rotation_range=45,
+            #shear_range=0.1,
+            #zoom_range=0.3,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
+            vertical_flip=True,
+            horizontal_flip=True
+            )
+
+        # the default directory name we set
+        train_data_dir = cwd + '/data/sorted/train'
+
+        train_generator = train_datagen.flow_from_directory(
+            train_data_dir,
+            target_size=(img_width, img_height),
+            batch_size=batch_size,
+            class_mode='sparse'
+            )
+
+        train_data_n = len(os.listdir(train_data_dir + '/1')) + len(os.listdir(train_data_dir + '/0')) + len(
+            os.listdir(train_data_dir + '/2'))
+
+        # define a sampler to transform linear feature with additive chi2
+        chi_feature_sampler = AdditiveChi2Sampler()
+
+        # define a sampler to transform linear feature with rbf
+        rbf_feature_sampler = RBFSampler(gamma=4.0, n_components=3000)
+
+        feature_train_stack = np.zeros((100, 2048)) - 1
+        label_train_stack = np.zeros((100, 1)) - 1
+
+        for i in range(train_data_n // batch_size):
+            print("======= data reading! =======")
+            print("batch No." + str(i))
+            feature_train, label_train = get_feature_and_label(model, train_generator, i)
+            feature_train = normalize(feature_train)
+            # print(feature_train.shape)
+
+            # feature_train = rbf_feature_sampler.fit_transform(feature_train)
+            # feature_train = chi_feature_sampler.fit_transform(feature_train, label_train)
+            # print(feature_train.shape)
+            # print(label_train.shape)
+
+            if i == 0:
+                feature_train_stack = feature_train
+                label_train_stack = label_train
+            else:
+                feature_train_stack = np.vstack((feature_train_stack, feature_train))
+                label_train_stack = np.hstack((label_train_stack, label_train))
+
+            print(feature_train_stack.shape)
+            print(label_train_stack.shape)
+
+        print("saving data!")
+        filename = save_file_name
+        pickle.dump([feature_train_stack, label_train_stack], open(filename, 'wb'))
+        print("data saved at " + filename)
+
+    return feature_train_stack, label_train_stack
+
+
 if __name__ == '__main__':
     
     model = VGG16(weights='imagenet', include_top=False)
-    #base_model = VGG19(weights='imagenet')
-    #model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
+    # base_model = VGG19(weights='imagenet')
+    # model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
 
     cwd = os.getcwd()
 
-    img_width, img_height = 80, 80
-    batch_size = 200
-
-    train_datagen = ImageDataGenerator(
-        #rescale=1. / 255clear,
-        #rotation_range=45,
-        #shear_range=0.1,
-        #zoom_range=0.3,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        vertical_flip=True,
-        horizontal_flip=True
-        )
-
-    #valid_datagen = ImageDataGenerator(rescale=1./255)
-    valid_datagen = ImageDataGenerator()
-
-    train_data_dir = cwd + '/data/sorted/train'
     valid_data_dir = cwd + '/data/sorted/valid'
     test_data_dir = cwd + '/data/sorted/test'
-    
-    train_generator = train_datagen.flow_from_directory(
-        train_data_dir,
-        target_size=(img_width, img_height),
-        batch_size=batch_size,
-        class_mode='sparse'
-        )
 
-    train_data_n = len(os.listdir(train_data_dir + '/1')) + len(os.listdir(train_data_dir + '/0')) + len(os.listdir(train_data_dir + '/2'))
-
-    chi_feature = AdditiveChi2Sampler()
+    img_width, img_height = 80, 80
+    batch_size = 200
 
     clf = SGDClassifier(class_weight={0:1.0, 1:1.2, 2:1.0})
 
     classes_ = np.array([0, 1, 2])
 
+    feature_train_stack, label_train_stack = read_or_prepare_training_data()
+
+    # define a sampler to transform linear feature with additive chi2
+    chi_feature = AdditiveChi2Sampler()
+    # define a sampler to transform linear feature with rbf
     rbf_feature = RBFSampler(gamma=4.0, n_components=3000)
-    #rbf_feature = Nystroem(n_components=100, gamma=1.0, random_state=1)
 
-    """
-    feature_train_stack = np.zeros((100, 2048)) - 1
-    label_train_stack = np.zeros((100, 1)) - 1
-    for i in range(train_data_n // batch_size):
-    #for i in range(2):
-        print("======= data reading! =======")
-        print("batch No." + str(i) )
-        feature_train, label_train = get_feature_and_label(model, train_generator, i)
-        feature_train  = normalize(feature_train)
-        #print(feature_train.shape)
-        
-        #feature_train = rbf_feature.fit_transform(feature_train)
-        #feature_train = chi_feature.fit_transform(feature_train, label_train)
-        print(feature_train.shape)
-        print(label_train.shape)
-
-        if i == 0:
-            feature_train_stack = feature_train
-            label_train_stack = label_train
-        else:
-            feature_train_stack = np.vstack((feature_train_stack, feature_train))
-            label_train_stack = np.hstack((label_train_stack, label_train))
-
-        print(feature_train_stack.shape)
-        print(label_train_stack.shape)
-        #clf.partial_fit(feature_train, label_train, classes_)
-        '''
-        if False and (np.remainder(i, 5) == 0 or i == train_data_n // batch_size - 1):
-            valid_score = []
-            right_0 = []
-            right_1 = []
-            #right_all = []
-            number_0 = []
-            number_1 = []
-            print("======= // predicting! // =======")
-            for j in range(valid_data_n // batch_size):
-                feature_valid, label_valid = get_feature_and_label(model, valid_generator, j)
-                feature_valid  = normalize(feature_valid)
-                
-                #feature_valid = rbf_feature.fit_transform(feature_valid)
-                feature_valid = chi_feature.fit_transform(feature_valid, label_valid)
-                
-                valid_score.append(clf.score(feature_valid, label_valid))
-                pred_label = clf.predict(feature_valid)
-                #print(pred_label)
-                #print(label_valid)
-                n0 = np.sum(np.where(label_valid==0, 1, 0) )
-                n1 = np.sum(np.where(label_valid==1, 1, 0) )
-                number_0.append(n0)
-                number_1.append(n1)
-                right_0.append( (len(pred_label) - np.sum( np.where(label_valid == 0, pred_label, 1) ) )  )
-                right_1.append( np.sum( np.where(label_valid == 1, pred_label, 0) ) )
-                #right_all.append( np.sum( np.where(label_valid==pred_label, 1, 0) ) )
-                
-            print(valid_score)
-            print(right_0)
-            print(right_1)
-            print( "class 0 acc: " + str( np.sum(right_0) /  np.sum(number_0) ) + "; class 1 acc: " + str( np.sum(right_1) /  np.sum(number_1))  )
-            print( "mean_acc: " + str(np.mean(valid_score)))
-            '''
-    
-    print("saving data!")
-    filename = 'svm_data5.pkl'
-    pickle.dump([feature_train_stack, label_train_stack], open(filename, 'wb'))
-    print("data saved!")
-    """
-    
-    pkl_file = open('svm_data5.pkl', 'rb')
-    feature_train_stack, label_train_stack = pickle.load(pkl_file)
-    #feature_train_stack = chi_feature.fit_transform(feature_train_stack, label_train_stack)
+    # feature_train_stack = chi_feature.fit_transform(feature_train_stack, label_train_stack)
     feature_train_stack = rbf_feature.fit_transform(feature_train_stack)
     
     print("====== start training ! =======")
@@ -272,6 +259,9 @@ if __name__ == '__main__':
 
     
     print("======= predicting! =======")
+
+    # valid_datagen = ImageDataGenerator(rescale=1./255)
+    valid_datagen = ImageDataGenerator()
 
     for input_dir in [valid_data_dir, test_data_dir]:
         valid_generator = valid_datagen.flow_from_directory(

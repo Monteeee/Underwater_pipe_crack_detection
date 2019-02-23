@@ -1,4 +1,0 @@
-labels = [
-    'intact',
-    'damaged'
-]

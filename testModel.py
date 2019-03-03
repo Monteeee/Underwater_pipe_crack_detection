@@ -8,11 +8,17 @@ import argparse
 if __name__ == "__main__":
     # load parameters
     parser = argparse.ArgumentParser()
-    parser.add_argument('--parameter', type=int, default=1, help='The Example of input parameter')
+    parser.add_argument('--savePath', type=str, default='C:/Users/wyxkd4/Desktop/Underwater_pipe_crack_detection/model', \
+        help='The path to save the model')
+    parser.add_argument('--dataPath', type=str, default='C:/Users/wyxkd4/Desktop/Underwater_pipe_crack_detection/data/data_new_dam_pipe_all/sorted', \
+        help='The path to data')
     args = parser.parse_args()
 
-    parameter = args.parameter
+    savePath = args.savePath
+    dataPath = args.dataPath
 
-    testModel = model.NetVGG16FC(80, 4)
+    # testModel = model.NetVGG16FC(80, 4)
     # testModel.summary()
+    testModel = model.NetMobileFC(save_path=savePath, image_size=128, class_num=2, alpha=0.5)
     testModel.model.summary()
+    testModel.train_model(data_path=dataPath, epochs=10)

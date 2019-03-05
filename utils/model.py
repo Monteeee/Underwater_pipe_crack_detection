@@ -163,8 +163,8 @@ class NetMobileFC(NetModel):
         
         return callbacks_list    
 
-    def train_model(self, data_path:str, epochs:int=100):
-        train_data = self.get_train_datagen(data_path+'/train', batch_size=128)
+    def train_model(self, data_path:str, epochs:int=100, batchsize=100):
+        train_data = self.get_train_datagen(data_path+'/train', batch_size=batchsize)
         validation_data = self.get_validation_datagen(data_path+'/valid', )
         self.callbacks_list = self.callbacks()
 

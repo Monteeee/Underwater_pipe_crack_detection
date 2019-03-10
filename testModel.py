@@ -4,6 +4,8 @@
 import utils.model as model
 import numpy as np
 import argparse
+from sklearn.metrics import log_loss, roc_auc_score, f1_score
+from sklearn.metrics import accuracy_score, recall_score, confusion_matrix
 
 if __name__ == "__main__":
     # load parameters
@@ -32,4 +34,14 @@ if __name__ == "__main__":
         alpha=0.5)
 
     testModel.model.summary()
-    testModel.train_model(data_path=dataPath, epochs=10)
+    testModel.train_model(data_path=dataPath, epochs=15, batch_size=16)
+
+    print("=>=>=>=>=> testing =>=>=>=>=>")
+    y_pred, y_true = testModel.test_model(data_path=dataPath, batch_size=16)
+
+    print("test Acc", round(accuracy_score(y_true, y_pred), 4))
+    print("test LogLoss", round(log_loss(y_true, y_pred), 4))
+    print("test AUC", round(roc_auc_score(y_true, y_pred), 4))
+    print("test Recall", round(recall_score(y_true, y_pred), 4))
+    print("test F1 Score", round(f1_score(y_true, y_pred), 4))
+    print("test Confusion Matrix \n", confusion_matrix(y_true, y_pred))

@@ -1,14 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/pytho
 # -*- coding: UTF-8 -*-
 
 '''
 @Description:  The util for keras model
 @Author: Wenjie Yin
 @Date: 2019-02-18 11:14:26
-@LastEditTime: 2019-03-09 15:31:44
+@LastEditTime: 2019-03-10 03:19:53
 @LastEditors: Wenjie Yin
 '''
 
+import glob
 import numpy as np
 
 from abc import ABC, abstractmethod
@@ -72,7 +73,7 @@ class NetModel(ABC):
         '''
         ...
 
-    def get_train_datagen(self, path: str, batch_size: int=20):
+    def get_train_datagen(self, path: str, batch_size: int=16):
         train_datagen = ImageDataGenerator(
             rescale=1./255,
             rotation_range=30.,
@@ -87,15 +88,26 @@ class NetModel(ABC):
 
         return train_generator
 
-    def get_validation_datagen(self, path: str, batch_size: int=128):
-        train_datagen = ImageDataGenerator(rescale=1./255)
-        train_generator = train_datagen.flow_from_directory(
+    def get_validation_datagen(self, path: str, batch_size: int=16):
+        valid_datagen = ImageDataGenerator(rescale=1./255)
+        valid_generator = valid_datagen.flow_from_directory(
             path,
             target_size=(self.image_size, self.image_size),
             batch_size=batch_size,
             class_mode='categorical',)
 
-        return train_generator
+        return valid_generator
+
+    def get_test_datagen(self, path: str, batch_size: int=16):
+        test_datagen = ImageDataGenerator(rescale=1./255)
+        test_generator = test_datagen.flow_from_directory(
+            path,
+            target_size=(self.image_size, self.image_size),
+            batch_size=batch_size,
+            class_mode=None,
+            shuffle=False)
+
+        return test_generator
 
 
 class NetMobileFC(NetModel):
@@ -191,18 +203,28 @@ class NetMobileFC(NetModel):
 
         return callbacks_list
 
-    def train_model(self, data_path: str, epochs: int=100):
-        train_data = self.get_train_datagen(data_path+'/train', batch_size=128)
-        validation_data = self.get_validation_datagen(data_path+'/valid', )
+    def train_model(self, data_path: str, epochs: int=100, batch_size: int=16):
+        train_data = self.get_train_datagen(
+            data_path+'/train', batch_size=batch_size)
+        validation_data = self.get_validation_datagen(
+            data_path+'/valid', batch_size=batch_size)
         self.callbacks_list = self.callbacks()
 
         self.model.fit_generator(
             train_data,
-            steps_per_epoch=2000,
+            steps_per_epoch=int(train_data.samples/batch_size),
             epochs=epochs,
             validation_data=validation_data,
-            validation_steps=2000,
+            validation_steps=200,
             callbacks=self.callbacks_list)
+
+    def test_model(self, data_path: str, batch_size: int=16):
+        test_data = self.get_test_datagen(data_path+'/test', batch_size=1)
+        probabilities = self.model.predict_generator(
+            test_data, test_data.samples)
+        y_pred = np.argmax(probabilities, axis=1)
+        y_true = test_data.classes
+        return y_pred, y_true
 
 
 class NetVGG16FC(NetModel):

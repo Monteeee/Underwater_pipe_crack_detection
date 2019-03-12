@@ -5,7 +5,7 @@
 @Description:  The util for keras model
 @Author: Wenjie Yin
 @Date: 2019-02-18 11:14:26
-@LastEditTime: 2019-03-10 03:19:53
+@LastEditTime: 2019-03-12 20:12:17
 @LastEditors: Wenjie Yin
 '''
 
@@ -88,7 +88,7 @@ class NetModel(ABC):
 
         return train_generator
 
-    def get_validation_datagen(self, path: str, batch_size: int=16):
+    def get_validation_datagen(self, path: str, batch_size: int=100):
         valid_datagen = ImageDataGenerator(rescale=1./255)
         valid_generator = valid_datagen.flow_from_directory(
             path,
@@ -151,8 +151,9 @@ class NetMobileFC(NetModel):
         global_average_pooling_2D_1 = GlobalAveragePooling2D()(
             batch_normalization_layer_2)
         dropout_1 = Dropout(0.2)(global_average_pooling_2D_1)
-        dense_1 = Dense(128, activation='relu')(dropout_1)
-        output_layer_1 = Dense(self.class_num)(dense_1)
+        dense_1 = Dense(256, activation='relu')(dropout_1)
+        dense_2 = Dense(32, activation='relu')(dense_1)
+        output_layer_1 = Dense(self.class_num)(dense_2)
 
         model = Model(inputs=input_tensor, outputs=output_layer_1)
 
@@ -207,7 +208,7 @@ class NetMobileFC(NetModel):
         train_data = self.get_train_datagen(
             data_path+'/train', batch_size=batch_size)
         validation_data = self.get_validation_datagen(
-            data_path+'/valid', batch_size=batch_size)
+            data_path+'/valid')
         self.callbacks_list = self.callbacks()
 
         self.model.fit_generator(
@@ -223,8 +224,9 @@ class NetMobileFC(NetModel):
         probabilities = self.model.predict_generator(
             test_data, test_data.samples)
         y_pred = np.argmax(probabilities, axis=1)
+        # y_score = np.amax(probabilities, axis=1)
         y_true = test_data.classes
-        return y_pred, y_true
+        return y_pred, y_true, probabilities
 
 
 class NetVGG16FC(NetModel):

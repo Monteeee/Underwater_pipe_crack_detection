@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--dataPath',
         type=str,
-        default='C:/Users/wyxkd4/Desktop/Underwater_pipe_crack_detection/data/data_new_dam_pipe_all/sorted',
+        default='C:/Users/wyxkd4/Desktop/Underwater_pipe_crack_detection/data/data_DAM_ANO_CON/sorted',
         help='The path to data')
     args = parser.parse_args()
 
@@ -30,18 +30,11 @@ if __name__ == "__main__":
     testModel = model.NetMobileFC(
         save_path=savePath,
         image_size=128,
-        class_num=2,
+        class_num=3,
         alpha=0.5)
 
     testModel.model.summary()
-    testModel.train_model(data_path=dataPath, epochs=15, batch_size=16)
+    testModel.train_model(data_path=dataPath, epochs=100, batch_size=32)
 
     print("=>=>=>=>=> testing =>=>=>=>=>")
     y_pred, y_true = testModel.test_model(data_path=dataPath, batch_size=16)
-
-    print("test Acc", round(accuracy_score(y_true, y_pred), 4))
-    print("test LogLoss", round(log_loss(y_true, y_pred), 4))
-    print("test AUC", round(roc_auc_score(y_true, y_pred), 4))
-    print("test Recall", round(recall_score(y_true, y_pred), 4))
-    print("test F1 Score", round(f1_score(y_true, y_pred), 4))
-    print("test Confusion Matrix \n", confusion_matrix(y_true, y_pred))

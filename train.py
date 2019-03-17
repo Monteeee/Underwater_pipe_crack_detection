@@ -13,12 +13,13 @@ if __name__ == "__main__":
     parser.add_argument(
         '--savePath',
         type=str,
-        default='C:/Users/wyxkd4/Desktop/Underwater_pipe_crack_detection/model',
+        default='./model',
         help='The path to save the model and log')
     parser.add_argument(
         '--dataPath',
         type=str,
-        default='C:/Users/wyxkd4/Desktop/Underwater_pipe_crack_detection/data/data_DAM_ANO_CON/sorted',
+        # default='C:/Users/yipai.du/Downloads/large data-20190313T201506Z-001 - Keras_format/sorted',
+        default='C:/Users/yipai.du/Downloads/small',
         help='The path to data')
     args = parser.parse_args()
 
@@ -30,11 +31,11 @@ if __name__ == "__main__":
     testModel = model.NetMobileFC(
         save_path=savePath,
         image_size=128,
-        class_num=3,
+        class_num=2,
         alpha=0.5)
 
     testModel.model.summary()
-    testModel.train_model(data_path=dataPath, epochs=100, batch_size=32)
+    testModel.train_model(data_path=dataPath, epochs=15, batch_size=32)
 
     print("=>=>=>=>=> testing =>=>=>=>=>")
     y_pred, y_true = testModel.test_model(data_path=dataPath, batch_size=16)

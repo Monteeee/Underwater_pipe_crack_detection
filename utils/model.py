@@ -139,12 +139,12 @@ class NetMobileFC(NetModel):
     def init_model(self):
         # Create Model
         input_tensor = Input(shape=self.input_shape)
-        batch_normalization_layer_1 = BatchNormalization()(input_tensor)
+        # batch_normalization_layer_1 = BatchNormalization()(input_tensor)
         base_mobilenet_model = MobileNet(
             input_shape=self.input_shape,
             alpha=0.5,
             include_top=False,
-            weights='imagenet')(batch_normalization_layer_1)
+            weights='imagenet')(input_tensor)
 
         batch_normalization_layer_2 = BatchNormalization()(
             base_mobilenet_model)
@@ -157,6 +157,8 @@ class NetMobileFC(NetModel):
 
         model = Model(inputs=input_tensor, outputs=output_layer_1)
 
+        for layer in model.layers[:-6]:
+            layer.trainable = False
         model.compile(
             optimizer='adam',
             loss='categorical_crossentropy',

@@ -24,7 +24,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--dataPath',
         type=str,
-        default='C:/Users/wyxkd4/Desktop/Underwater_pipe_crack_detection/data/data_DAM_ANO_CON/sorted',
+        default='C:/Users/wyxkd4/Desktop/Underwater_pipe_crack_detection/data/test_photos_large/sorted',
         help='The path to data')
     args = parser.parse_args()
 
@@ -75,5 +75,5 @@ if __name__ == "__main__":
 
     print("test Confusion Matrix \n", confusion_matrix(y_true, y_pred))
     target_names = ['class 0', 'class 1', 'class 2']
-    print("test classification report \n"classification_report(y_true, y_pred, target_names=target_names))
+    print("test classification report \n", classification_report(y_true, y_pred, target_names=target_names))
 

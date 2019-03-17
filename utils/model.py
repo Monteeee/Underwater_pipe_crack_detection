@@ -5,7 +5,7 @@
 @Description:  The util for keras model
 @Author: Wenjie Yin
 @Date: 2019-02-18 11:14:26
-@LastEditTime: 2019-03-12 20:12:17
+@LastEditTime: 2019-03-12 20:50:28
 @LastEditors: Wenjie Yin
 '''
 
@@ -75,11 +75,11 @@ class NetModel(ABC):
 
     def get_train_datagen(self, path: str, batch_size: int=16):
         train_datagen = ImageDataGenerator(
-            rescale=1./255,
-            rotation_range=30.,
-            shear_range=0.2,
-            zoom_range=0.2,
-            horizontal_flip=True)
+            rescale=1./255,)
+            # rotation_range=30.,
+            # shear_range=0.2,
+            # zoom_range=0.2,
+            # horizontal_flip=True)
         train_generator = train_datagen.flow_from_directory(
             path,
             target_size=(self.image_size, self.image_size),

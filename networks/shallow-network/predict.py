@@ -59,12 +59,12 @@ plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
 plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
-plt.title("Some extension of Receiver operating characteristic to multi-class")
+plt.title("ROC curve")
 plt.legend(loc="lower right")
 plt.show()
 
 print("test Confusion Matrix \n", confusion_matrix(y_true, y_pred))
-target_names = ["class 0", "class 1", "class 2"]
+target_names = ["clean", "class 1", "class 2", "class 3"]
 print(
     "test classification report \n"
     + classification_report(y_true, y_pred, target_names=target_names)

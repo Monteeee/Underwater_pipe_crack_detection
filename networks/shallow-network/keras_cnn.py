@@ -12,9 +12,9 @@ img_width, img_height = 80, 80
 train_data_dir = "C:/Users/yipai.du/Downloads/large data-20190313T201506Z-001 - Keras_format/sorted/train"
 validation_data_dir = "C:/Users/yipai.du/Downloads/large data-20190313T201506Z-001 - Keras_format/sorted/valid"
 
-steps_per_epoch = 30
+steps_per_epoch = 50
 epochs = 100
-batch_size = 48
+batch_size = 16
 
 if K.image_data_format() == "channels_first":
     input_shape = (3, img_width, img_height)
@@ -37,14 +37,14 @@ model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Flatten())
 model.add(Dense(256))
 model.add(Activation("relu"))
-# model.add(Dropout(0.5))
+model.add(Dropout(0.1))
 model.add(Dense(4))
-model.add(Activation("sigmoid"))
+model.add(Activation("softmax"))
 
 model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
 train_datagen = ImageDataGenerator(
-    rescale=1.0 / 255, shear_range=0.2, horizontal_flip=True, vertical_flip=True
+    rescale=1.0 / 255, horizontal_flip=True, vertical_flip=True
 )
 
 valid_datagen = ImageDataGenerator(rescale=1.0 / 255)

@@ -61,7 +61,7 @@ def read_tensor_from_image_file(file_name, input_height=299, input_width=299,
     image_reader = tf.image.decode_jpeg(file_reader, channels = 3,
                                         name='jpeg_reader')
   float_caster = tf.cast(image_reader, tf.float32)
-  dims_expander = tf.expand_dims(float_caster, 0);
+  dims_expander = tf.expand_dims(float_caster, 0)
   resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
   normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
   sess = tf.Session()
@@ -123,13 +123,13 @@ if __name__ == "__main__":
   y_pred = []
   y_true = []
   y_score = []
-  n_classes = len(os.listdir('tf_files/test_large/'))
-  # p = 0
-  for class_index in os.listdir('tf_files/test_large/'):
+  n_classes = len(os.listdir('tf_files/test_small/'))
+  p = 0
+  for class_index in os.listdir('tf_files/test_small/'):
     print('class:', class_index)
-    for i in os.listdir('tf_files/test_large/' + class_index):
+    for i in os.listdir('tf_files/test_small/' + class_index):
       print(i)
-      file_name = 'tf_files/test_large/' + class_index + '/' + i
+      file_name = 'tf_files/test_small/' + class_index + '/' + i
     # file_name = "tf_files/test_large/" + str(class_index) + "test_large_" + str(class_index) + " (" + 
     
       t = read_tensor_from_image_file(file_name,
@@ -140,8 +140,8 @@ if __name__ == "__main__":
 
       input_name = "import/" + input_layer
       output_name = "import/" + output_layer
-      input_operation = graph.get_operation_by_name(input_name);
-      output_operation = graph.get_operation_by_name(output_name);
+      input_operation = graph.get_operation_by_name(input_name)
+      output_operation = graph.get_operation_by_name(output_name)
 
       with tf.Session(graph=graph) as sess:
         start = time.time()
@@ -154,11 +154,17 @@ if __name__ == "__main__":
       labels = load_labels(label_file)
       y_pred.append(top_k[0])
       y_true.append(int(class_index))
-      y_score.append(results)
+      y_score.append(results[top_k[0]])
       print('\nEvaluation time (1-image): {:.3f}s\n'.format(end-start))
       template = "{} (score={:0.5f})"
       for i in top_k:
         print(template.format(labels[i], results[i]))
+      
+      # if p < 3:
+      #   p+=1
+      # else:
+      #   p=0
+      #   break
 
   y_pred = np.array(y_pred)
   y_true = np.array(y_true)
@@ -170,18 +176,19 @@ if __name__ == "__main__":
   fpr = dict()
   tpr = dict()
   roc_auc = dict()
-  for i in range(n_classes):
-      fpr[i], tpr[i], _ = roc_curve(y_one_hot[:, i], y_score[:, i])
-      roc_auc[i] = auc(fpr[i], tpr[i])
+
+  fpr, tpr, thresholds = roc_curve(y_pred, y_score)
+   
+  roc_auc = auc(fpr,tpr)
 
   # fpr, tpr, thresholds = roc_curve(y_one_hot.ravel(), y_score.ravel())
   lw = 2
   plt.figure()
 
-  colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
-  for i, color in zip(range(n_classes), colors):
-      plt.plot(fpr[i], tpr[i], color=color, lw=lw, label='ROC curve of class {0} (area = {1:0.4f})'.format(i, roc_auc[i]))
-
+  # colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'navy'])
+  
+  plt.plot(fpr, tpr, color='darkorange',
+          lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
   plt.plot([0, 1], [0, 1], 'k--', lw=lw)
   plt.xlim([0.0, 1.0])
   plt.ylim([0.0, 1.05])
@@ -192,6 +199,6 @@ if __name__ == "__main__":
   plt.show()
 
   print("test Confusion Matrix \n", confusion_matrix(y_true, y_pred))
-  target_names = ['clean', 'anode', 'connection', 'damage']
+  target_names = ['clean', 'damage']
   print("test classification report \n", classification_report(y_true, y_pred, target_names=target_names, digits=5))
   pass

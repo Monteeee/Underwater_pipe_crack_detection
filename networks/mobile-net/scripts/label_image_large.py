@@ -79,7 +79,7 @@ def load_labels(label_file):
 if __name__ == "__main__":
   
   model_file = "tf_files/retrained_graph.pb"
-  label_file = "tf_files/retrained_labels.txt"
+  label_file = "tf_files/retrained_labels_large.txt"
   input_height = 128
   input_width = 128
   input_mean = 128
@@ -124,7 +124,7 @@ if __name__ == "__main__":
   y_true = []
   y_score = []
   n_classes = len(os.listdir('tf_files/test_large/'))
-  # p = 0
+  p = 0
   for class_index in os.listdir('tf_files/test_large/'):
     print('class:', class_index)
     for i in os.listdir('tf_files/test_large/' + class_index):
@@ -159,7 +159,11 @@ if __name__ == "__main__":
       template = "{} (score={:0.5f})"
       for i in top_k:
         print(template.format(labels[i], results[i]))
-
+      # if p < 3:
+      #   p+=1
+      # else:
+      #   p=0
+      #   break
   y_pred = np.array(y_pred)
   y_true = np.array(y_true)
   y_score = np.array(y_score) 
@@ -178,7 +182,7 @@ if __name__ == "__main__":
   lw = 2
   plt.figure()
 
-  colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+  colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'navy'])
   for i, color in zip(range(n_classes), colors):
       plt.plot(fpr[i], tpr[i], color=color, lw=lw, label='ROC curve of class {0} (area = {1:0.5f})'.format(i, roc_auc[i]))
 

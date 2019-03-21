@@ -8,6 +8,7 @@ from sklearn.metrics import auc
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import classification_report
 from itertools import cycle
+import pickle
 
 img_width, img_height = 80, 80
 
@@ -45,7 +46,14 @@ if n_classes == 4:
         fpr[i], tpr[i], _ = roc_curve(y_one_hot[:, i], y_score[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
 
-    # fpr, tpr, thresholds = roc_curve(y_one_hot.ravel(), y_score.ravel())
+    fpr["micro"], tpr["micro"], _ = roc_curve(y_one_hot.ravel(), y_score.ravel())
+    roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+    with open('./shallow_large_micro_roc.pkl', 'wb') as fP:
+            pickle.dump(
+                [fpr["micro"], tpr["micro"]],
+                fP, pickle.HIGHEST_PROTOCOL)
+            fP.close()
     lw = 2
     plt.figure()
 
@@ -82,27 +90,27 @@ else:
     tpr = dict()
     roc_auc = dict()
 
-    fpr, tpr, thresholds = roc_curve(y_pred, y_score)
+    # fpr, tpr, thresholds = roc_curve(y_pred, y_score)
 
-    roc_auc = auc(fpr, tpr)
+    # roc_auc = auc(fpr, tpr)
 
-    # fpr, tpr, thresholds = roc_curve(y_one_hot.ravel(), y_score.ravel())
-    lw = 2
-    plt.figure()
+    # # fpr, tpr, thresholds = roc_curve(y_one_hot.ravel(), y_score.ravel())
+    # lw = 2
+    # plt.figure()
 
-    # colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'navy'])
+    # # colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'navy'])
 
-    plt.plot(
-        fpr, tpr, color="darkorange", lw=lw, label="ROC curve (area = %0.2f)" % roc_auc
-    )
-    plt.plot([0, 1], [0, 1], "k--", lw=lw)
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title("Receiver Operating Characteristic to classes")
-    plt.legend(loc="lower right")
-    plt.show()
+    # plt.plot(
+    #     fpr, tpr, color="darkorange", lw=lw, label="ROC curve (area = %0.2f)" % roc_auc
+    # )
+    # plt.plot([0, 1], [0, 1], "k--", lw=lw)
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel("False Positive Rate")
+    # plt.ylabel("True Positive Rate")
+    # plt.title("Receiver Operating Characteristic to classes")
+    # plt.legend(loc="lower right")
+    # plt.show()
 
     print("test Confusion Matrix \n", confusion_matrix(y_true, y_pred))
     target_names = ["clean", "damage"]

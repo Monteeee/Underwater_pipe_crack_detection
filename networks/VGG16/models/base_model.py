@@ -16,13 +16,13 @@ import time
 class BaseModel(object):
     def __init__(self,
                  class_weight=None,
-                 nb_epoch=30,
+                 nb_epoch=100,
                  freeze_layers_number=19):
         self.model = None
         self.class_weight = class_weight
         self.nb_epoch = nb_epoch
         self.fine_tuning_patience = 30
-        self.batch_size = 128
+        self.batch_size = 4
         self.freeze_layers_number = freeze_layers_number
         self.img_size = (80, 80)
 
@@ -33,10 +33,10 @@ class BaseModel(object):
         self.freeze_top_layers()
 
         self.model.compile(
-            loss='binary_crossentropy',
+            loss='categorical_crossentropy',
             optimizer=Adam(lr=1e-5),
             #optimizer=SGD(lr=5e-6, momentum=0.9),
-            metrics=['binary_accuracy'])
+            metrics=['categorical_accuracy'])
 
         train_data = self.get_train_datagen(
             rescale=1./255,

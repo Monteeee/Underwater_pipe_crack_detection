@@ -32,7 +32,7 @@ class VGG16(BaseModel):
         #predictions = Dense(
             #len(config.classes), activation='softmax', name='predictions')(x)
         predictions = Dense(
-            2, activation='softmax', name='predictions')(x)
+            4, activation='softmax', name='predictions')(x)
         self.model = Model(input=base_model.input, output=predictions)
 
 

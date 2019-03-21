@@ -8,7 +8,7 @@ from sklearn.externals import joblib
 
 import config
 import util
-
+import pickle
 
 def parse_args():
     """

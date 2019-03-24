@@ -1,14 +1,18 @@
-import time
 import argparse
-import os
-import numpy as np
 import glob
-from sklearn.metrics import accuracy_score, confusion_matrix
+import os
+import pickle
+import time
+from itertools import cycle
+import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.externals import joblib
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, roc_curve, auc
+from sklearn.preprocessing import label_binarize
 
 import config
 import util
-import pickle
+
 
 def parse_args():
     """
@@ -16,7 +20,10 @@ def parse_args():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--path", dest="path", help="Path to image", default=None, type=str
+        "--path", dest="path", help="Path to image",
+        default='C:/Users/yipai.du/Downloads/large_Keras/sorted/test/',
+        # default='C:/Users/yipai.du/Downloads/small/test/',
+        type=str
     )
     parser.add_argument(
         "--accuracy", action="store_true", help="To print accuracy score"
@@ -28,14 +35,13 @@ def parse_args():
     parser.add_argument(
         "--model",
         type=str,
-        required=True,
         help="Base model architecture",
         choices=[
             config.MODEL_RESNET50,
             config.MODEL_RESNET152,
             config.MODEL_INCEPTION_V3,
             config.MODEL_VGG16,
-        ],
+        ]
     )
     parser.add_argument("--data_dir", help="Path to data train directory")
     parser.add_argument(
@@ -56,6 +62,12 @@ def get_files(path):
         print(path)
         files = glob.glob(path + "*.png")
         path = path1 + "0\\"
+        files1 = glob.glob(path + "*.png")
+        files = files + files1
+        path = path1 + "2\\"
+        files1 = glob.glob(path + "*.png")
+        files = files + files1
+        path = path1 + "3\\"
         files1 = glob.glob(path + "*.png")
         files = files + files1
     elif path.find("*") > 0:
@@ -95,6 +107,7 @@ def get_inputs_and_trues(files):
 
 
 def predict(path):
+    n_classes = 4
     files = get_files(path)
     n_files = len(files)
     print("Found {} files".format(n_files))
@@ -107,6 +120,7 @@ def predict(path):
 
     y_trues = []
     predictions = np.zeros(shape=(n_files,))
+    scores = np.zeros(shape=(n_files, n_classes))
     nb_batch = int(np.ceil(n_files / float(args.batch_size)))
     for n in range(0, nb_batch):
         print("Batch {}".format(n))
@@ -144,38 +158,82 @@ def predict(path):
             out = model.predict(np.array(inputs))
             end = time.clock()
             predictions[n_from:n_to] = np.argmax(out, axis=1)
+            scores[n_from:n_to, :] = out
             print("Prediction on batch {} took: {}".format(n, end - start))
 
     if not args.store_activations:
-        a = 0
-        for i, p in enumerate(predictions):
-            recognized_class = list(classes_in_keras_format.keys())[
-                list(classes_in_keras_format.values()).index(p)
-            ]
-            print(
-                "| should be {} ({}) -> predicted as {} ({})".format(
-                    y_trues[i], files[i].split(os.sep)[-2], p, recognized_class
-                )
-            )
-            a = a + int(recognized_class)
-        b = a / len(predictions)
-        print(b)
-
-        print("test Confusion Matrix \n", confusion_matrix(y_true, y_pred))
-        target_names = ["clean", "anode", "connection", "damage"]
+        t = np.zeros_like(predictions)
+        for i in range(len(y_trues)):
+            string = y_trues[i]
+            t[i] = int(string[11])
+        y_trues = t
+        print("test Confusion Matrix \n")
+        print(confusion_matrix(y_trues, predictions))
+        target_names = ["clean", "annode", "connection", "damage"]
         print(
             "test classification report \n",
-            classification_report(y_true, y_pred, target_names=target_names, digits=5),
+            classification_report(
+                y_trues, predictions, target_names=target_names, digits=5
+            ),
         )
-        # if args.accuracy:
-        #     print(
-        #         "Accuracy {}".format(accuracy_score(y_true=y_trues, y_pred=predictions))
-        #     )
+        y_one_hot = label_binarize(y_trues, np.arange(n_classes))
+        # print("test LogLoss", round(log_loss(y_true, y_pred), 4))
+        fpr = dict()
+        tpr = dict()
+        roc_auc = dict()
+        for i in range(n_classes):
+            fpr[i], tpr[i], _ = roc_curve(y_one_hot[:, i], scores[:, i])
+            roc_auc[i] = auc(fpr[i], tpr[i])
 
-        # if args.plot_confusion_matrix:
-        #     cnf_matrix = confusion_matrix(y_trues, predictions)
-        #     util.plot_confusion_matrix(cnf_matrix, config.classes, normalize=False)
-        #     util.plot_confusion_matrix(cnf_matrix, config.classes, normalize=True)
+        fpr["micro"], tpr["micro"], _ = roc_curve(
+            y_one_hot.ravel(), scores.ravel()
+        )
+        roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+        with open("./vgg_large_micro_roc.pkl", "wb") as fP:
+            pickle.dump([fpr["micro"], tpr["micro"]], fP, pickle.HIGHEST_PROTOCOL)
+            fP.close()
+
+        lw = 2
+        plt.figure()
+
+        colors = cycle(["aqua", "darkorange", "cornflowerblue", "navy"])
+        class_name = ["clean", "anode", "connection", "damage"]
+
+        for i, color in zip(range(n_classes), colors):
+            plt.plot(
+                fpr[i],
+                tpr[i],
+                color=color,
+                lw=lw,
+                label="ROC curve of class {0} (area = {1:0.5f})".format(
+                    class_name[i], roc_auc[i]
+                ),
+            )
+
+        plt.plot(
+            fpr["micro"],
+            tpr["micro"],
+            label="micro-average ROC curve (area = {0:0.5f})"
+            "".format(roc_auc["micro"]),
+            color="navy",
+            linestyle=":",
+            linewidth=2,
+        )
+
+        plt.plot([0, 1], [0, 1], "k--", lw=lw)
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.title("Receiver Operating Characteristic to classes")
+        plt.legend(loc="lower right")
+        plt.show()
+        plt.savefig('roc.png')
+        if args.accuracy:
+            print(
+                "Accuracy {}".format(accuracy_score(y_true=y_trues, y_pred=predictions))
+            )
 
 
 if __name__ == "__main__":
@@ -189,8 +247,7 @@ if __name__ == "__main__":
     if args.data_dir:
         config.data_dir = args.data_dir
         config.set_paths()
-    if args.model:
-        config.model = args.model
+    config.model = config.MODEL_VGG16
 
     util.set_img_format()
     model_module = util.get_model_class_instance()
@@ -203,4 +260,3 @@ if __name__ == "__main__":
     if args.execution_time:
         toc = time.clock()
         print("Time: %s" % (toc - tic))
-
